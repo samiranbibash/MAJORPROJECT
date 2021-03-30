@@ -1,0 +1,10 @@
+org/tensorflow/lite/examples/detection/tflite/ImageSegmenter.java
+ org.tensorflow.lite.examples.detection.tflite.ImageSegmenter
+ org.tensorflow.lite.examples.detection.tflite.ImageSegmenter$Model
+org/tensorflow/lite/examples/detection/tflite/TFLiteObjectDetectionAPIModel.java
+ org.tensorflow.lite.examples.detection.tflite.TFLiteObjectDetectionAPIModel
+org/tensorflow/lite/examples/detection/tflite/Detector.java
+ org.tensorflow.lite.examples.detection.tflite.Detector
+ org.tensorflow.lite.examples.detection.tflite.Detector$Recognition
+org/tensorflow/lite/examples/detection/tflite/BuildConfig.java
+ org.tensorflow.lite.examples.detection.tflite.BuildConfig
