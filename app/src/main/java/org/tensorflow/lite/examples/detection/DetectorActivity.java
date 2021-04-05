@@ -186,6 +186,9 @@ public class DetectorActivity extends CameraActivity implements OnImageAvailable
     LOGGER.i("Preparing image " + currTimestamp + " for detection in bg thread.");
 
     rgbFrameBitmap.setPixels(getRgbBytes(), 0, previewWidth, 0, 0, previewWidth, previewHeight);
+    final int cropSize = Math.min(previewWidth, previewHeight);
+
+
 
     readyForNextImage();
 
@@ -238,6 +241,14 @@ public class DetectorActivity extends CameraActivity implements OnImageAvailable
             trackingOverlay.postInvalidate();
 
             computingDetection = false;
+
+
+            //Added for depth estimation
+            if(classifier != null){
+              float[] img_array_depth = classifier.recognizeImage(rgbFrameBitmap, sensorOrientation);
+            }
+
+
 
             runOnUiThread(
                 new Runnable() {
