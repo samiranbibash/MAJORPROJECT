@@ -42,6 +42,7 @@ import org.tensorflow.lite.examples.detection.env.ImageUtils;
 import org.tensorflow.lite.examples.detection.env.Logger;
 import org.tensorflow.lite.examples.detection.tracking.MultiBoxTracker;
 
+import tflite.Classifier;
 import tflite.Detector;
 import tflite.TFLiteObjectDetectionAPIModel;
 
@@ -85,6 +86,9 @@ public class DetectorActivity extends CameraActivity implements OnImageAvailable
   private Matrix cropToFrameTransform;
 
   private MultiBoxTracker tracker;
+  private Classifier classifier;
+  private Bitmap depthRGBitmap = null;
+
 
   private BorderedText borderedText;
   //takes photos and segments them periodically
@@ -164,6 +168,7 @@ public class DetectorActivity extends CameraActivity implements OnImageAvailable
         });
 
     tracker.setFrameConfiguration(previewWidth, previewHeight, sensorOrientation);
+    rgbFrameBitmap = Bitmap.createBitmap(previewWidth, previewHeight, Config.ARGB_8888);
   }
 
   @Override
