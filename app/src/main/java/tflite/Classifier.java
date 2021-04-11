@@ -110,7 +110,7 @@ public abstract class Classifier {
    * @param numThreads The number of threads to use for classification.
    * @return A classifier with the desired configuration.
    */
-  public Classifier create(Activity activity, Model model, Device device, int numThreads)
+  public static Classifier create(Activity activity, Model model, Device device, int numThreads)
       throws IOException {
     if (model == Model.QUANTIZED_MOBILENET) {
       return new ClassifierQuantizedMobileNet(activity, device, numThreads);

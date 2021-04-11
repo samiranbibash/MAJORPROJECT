@@ -54,6 +54,8 @@ import java.nio.ByteBuffer;
 import org.tensorflow.lite.examples.detection.env.ImageUtils;
 import org.tensorflow.lite.examples.detection.env.Logger;
 
+import tflite.Classifier;
+
 
 public abstract class CameraActivity extends AppCompatActivity
     implements OnImageAvailableListener,
@@ -89,7 +91,9 @@ public abstract class CameraActivity extends AppCompatActivity
   private SwitchCompat apiSwitchCompat;
   private TextView threadsTextView;
   private CameraConnectionFragment camera2Fragment;
- // public ImageSegmenter imageSegmenterOriginal;
+  private Classifier.Model model = Classifier.Model.FLOAT_EFFICIENTNET;
+  private Classifier.Device device = Classifier.Device.GPU;
+  private int numThreads;
 
   @Override
   protected void onCreate(final Bundle savedInstanceState) {
@@ -539,7 +543,7 @@ public abstract class CameraActivity extends AppCompatActivity
   public void onClick(View v) {
     if (v.getId() == R.id.plus) {
       String threads = threadsTextView.getText().toString().trim();
-      int numThreads = Integer.parseInt(threads);
+      numThreads = Integer.parseInt(threads);
       if (numThreads >= 9) return;
       numThreads++;
       threadsTextView.setText(String.valueOf(numThreads));
@@ -592,8 +596,9 @@ public abstract class CameraActivity extends AppCompatActivity
   protected abstract void startSegmentationBackground();
   protected abstract void stopSegmentationBackground();
 
+  protected Classifier.Model getModel() {return model;}
 
+  protected Classifier.Device getDevice() { return device; }
 
-
-
+  protected int getNumThreads() { return numThreads; }
 }

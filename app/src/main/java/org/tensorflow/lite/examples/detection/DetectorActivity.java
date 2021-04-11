@@ -29,6 +29,7 @@ import android.media.ImageReader.OnImageAvailableListener;
 import android.os.Handler;
 import android.os.HandlerThread;
 import android.os.SystemClock;
+import android.util.Log;
 import android.util.Size;
 import android.util.TypedValue;
 import android.widget.Toast;
@@ -89,6 +90,17 @@ public class DetectorActivity extends CameraActivity implements OnImageAvailable
   private Classifier classifier;
   private Bitmap depthRGBitmap = null;
 
+  /** Input image size of the model along x axis. */
+  private int imageSizeX;
+  /** Input image size of the model along y axis. */
+  private int imageSizeY;
+
+  private   float[] img_array_depth;
+  public static int[] image_normalized;
+
+
+
+
 
   private BorderedText borderedText;
   //takes photos and segments them periodically
@@ -146,6 +158,14 @@ public class DetectorActivity extends CameraActivity implements OnImageAvailable
     rgbFrameBitmap = Bitmap.createBitmap(previewWidth, previewHeight, Config.ARGB_8888);
     croppedBitmap = Bitmap.createBitmap(cropSize, cropSize, Config.ARGB_8888);
 
+
+    recreateClassifier(getModel(), getDevice(), getNumThreads());
+    if (classifier == null) {
+      LOGGER.e("No classifier on preview!");
+      return;
+    }
+
+
     frameToCropTransform =
         ImageUtils.getTransformationMatrix(
             previewWidth, previewHeight,
@@ -187,6 +207,7 @@ public class DetectorActivity extends CameraActivity implements OnImageAvailable
 
     rgbFrameBitmap.setPixels(getRgbBytes(), 0, previewWidth, 0, 0, previewWidth, previewHeight);
     final int cropSize = Math.min(previewWidth, previewHeight);
+    Log.i("JOKER", "The preview width is: "+ previewWidth);
 
 
 
@@ -245,7 +266,8 @@ public class DetectorActivity extends CameraActivity implements OnImageAvailable
 
             //Added for depth estimation
             if(classifier != null){
-              float[] img_array_depth = classifier.recognizeImage(rgbFrameBitmap, sensorOrientation);
+               img_array_depth = classifier.recognizeImage(rgbFrameBitmap, sensorOrientation);
+               image_normalized =  normalize_image(img_array_depth, imageSizeX, imageSizeY);
             }
 
 
@@ -325,4 +347,58 @@ public class DetectorActivity extends CameraActivity implements OnImageAvailable
   protected void setNumThreads(final int numThreads) {
     runInBackground(() -> detector.setNumThreads(numThreads));
   }
+
+ private void recreateClassifier(Classifier.Model model, Classifier.Device device, int numThreads){
+   if (classifier != null) {
+     LOGGER.d("Closing classifier.");
+     classifier.close();
+     classifier = null;
+   }
+   if (device == Classifier.Device.GPU
+           && (model == Classifier.Model.QUANTIZED_MOBILENET || model == Classifier.Model.QUANTIZED_EFFICIENTNET)) {
+     LOGGER.d("Not creating classifier: GPU doesn't support quantized models.");
+     runOnUiThread(
+             () -> {
+               Toast.makeText(this, "GPU Error for quantized models", Toast.LENGTH_LONG).show();
+             });
+     return;
+   }
+   try {
+     LOGGER.d(
+             "Creating classifier (model=%s, device=%s, numThreads=%d)", model, device, numThreads);
+     classifier = Classifier.create(this, model, device, numThreads);
+   } catch (IOException | IllegalArgumentException e) {
+     LOGGER.e(e, "Failed to create classifier.");
+     runOnUiThread(
+             () -> {
+               Toast.makeText(this, e.getMessage(), Toast.LENGTH_LONG).show();
+             });
+     return;
+   }
+
+
+
+   // Updates the input image size.
+   imageSizeX = classifier.getImageSizeX();
+   imageSizeY = classifier.getImageSizeY();
+ }
+
+  private int[] normalize_image(float[] img_array, int imageSizeX, int imageSizeY){
+          float maxval = Float.NEGATIVE_INFINITY;
+          float minval = Float.POSITIVE_INFINITY;
+          for (float cur : img_array) {
+            maxval = Math.max(maxval, cur);
+            minval = Math.min(minval, cur);
+          }
+          float multiplier = 0;
+          if ((maxval - minval) > 0) multiplier = 255 / (maxval - minval);
+
+          int[] img_normalized = new int[img_array.length];
+          for (int i = 0; i < img_array.length; ++i) {
+            float val = (float) (multiplier * (img_array[i] - minval));
+            img_normalized[i] = (int) val;
+          }
+          return img_normalized;
+  }
+
 }

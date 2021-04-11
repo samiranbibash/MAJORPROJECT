@@ -24,16 +24,22 @@ import android.graphics.Paint.Cap;
 import android.graphics.Paint.Join;
 import android.graphics.Paint.Style;
 import android.graphics.RectF;
+import android.hardware.Camera;
+import android.hardware.camera2.CameraCaptureSession;
+import android.hardware.camera2.CameraDevice;
 import android.text.TextUtils;
 import android.util.Pair;
 import android.util.TypedValue;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Queue;
+
+import org.tensorflow.lite.examples.detection.DetectorActivity;
 import org.tensorflow.lite.examples.detection.env.BorderedText;
 import org.tensorflow.lite.examples.detection.env.ImageUtils;
 import org.tensorflow.lite.examples.detection.env.Logger;
 
+import tflite.Detector;
 import tflite.Detector.Recognition;
 
 /** A tracker that handles non-max suppression and matches existing objects to new detections. */
@@ -124,6 +130,7 @@ public class MultiBoxTracker {
 
   public synchronized void draw(final Canvas canvas) {
     final boolean rotated = sensorOrientation % 180 == 90;
+
     final float multiplier =
         Math.min(
             canvas.getHeight() / (float) (rotated ? frameWidth : frameHeight),
@@ -145,16 +152,57 @@ public class MultiBoxTracker {
       float cornerSize = Math.min(trackedPos.width(), trackedPos.height()) / 8.0f;
       canvas.drawRoundRect(trackedPos, cornerSize, cornerSize, boxPaint);
 
-      final String labelString =
-          !TextUtils.isEmpty(recognition.title)
-              ? String.format("%s %.2f", recognition.title, (100 * recognition.detectionConfidence))
-              : String.format("%.2f", (100 * recognition.detectionConfidence));
+      final String labelString;
+      int distance;
+          if(DetectorActivity.image_normalized == null){
+            distance = 0;
+          } else{
+            int[] extended = padDepth(DetectorActivity.image_normalized);
+            distance = extended[(int) (trackedPos.centerY()*256 + trackedPos.centerX())];
+          }
+          if (!TextUtils.isEmpty(recognition.title))
+              labelString =  String.format("%s %.2f Dist: %.2f", recognition.title, (100 * recognition.detectionConfidence), getDistance(distance));
+           // labelString =  String.format("%s %.2f Dist: %d", recognition.title, (100 * recognition.detectionConfidence), distance);
+          else{
+            labelString = String.format("%.2f D: %.2f", (100 * recognition.detectionConfidence), getDistance(distance));
+           // labelString = String.format("%.2f D: %d", (100 * recognition.detectionConfidence), distance);
+          }
       //            borderedText.drawText(canvas, trackedPos.left + cornerSize, trackedPos.top,
       // labelString);
       borderedText.drawText(
-          canvas, trackedPos.left + cornerSize, trackedPos.top, labelString + "%", boxPaint);
+          canvas, trackedPos.left + cornerSize, trackedPos.top, labelString , boxPaint);
     }
   }
+
+  private int[]  padDepth(int[] imageDepth){
+    int[] result = new int[307200];
+    int j = 0;
+
+    for(int i =0; i < imageDepth.length;  i++){
+
+      result[j] = imageDepth[i];
+      result[j+1] = imageDepth[i];
+      result[j+2] = imageDepth[i];
+      result[j+3] = imageDepth[i];
+      j+= 4;
+    }
+
+
+
+    for(int i = 262144; i < 307200; i++){
+      result[i] = 1;
+    }
+
+
+    return result;
+  }
+
+  private float getDistance(int depthPixel){
+    // Baseline * Focal Length / Disparity
+    return (720f * 80f)/(float)(depthPixel);
+  }
+
+
 
   private void processResults(final List<Recognition> results) {
     final List<Pair<Float, Recognition>> rectsToTrack = new LinkedList<Pair<Float, Recognition>>();
