@@ -1,18 +1,3 @@
-/*
- * Copyright 2019 The TensorFlow Authors. All Rights Reserved.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *       http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- */
 
 package org.tensorflow.lite.examples.detection;
 
@@ -94,7 +79,7 @@ public abstract class CameraActivity extends AppCompatActivity
   private Classifier.Model model = Classifier.Model.FLOAT_EFFICIENTNET;
   private Classifier.Device device = Classifier.Device.GPU;
   private int numThreads;
-
+//Called when appp is launched and set layout of app
   @Override
   protected void onCreate(final Bundle savedInstanceState) {
     LOGGER.d("onCreate " + this);
@@ -105,13 +90,13 @@ public abstract class CameraActivity extends AppCompatActivity
     Toolbar toolbar = findViewById(R.id.toolbar);
     setSupportActionBar(toolbar);
     getSupportActionBar().setDisplayShowTitleEnabled(false);
-
+//Cnecks for camera permision if yes sets fragment else req
     if (hasPermission()) {
       setFragment();
     } else {
       requestPermission();
     }
-
+//    UI
     threadsTextView = findViewById(R.id.threads);
     plusImageView = findViewById(R.id.plus);
     minusImageView = findViewById(R.id.minus);
@@ -119,15 +104,9 @@ public abstract class CameraActivity extends AppCompatActivity
     bottomSheetLayout = findViewById(R.id.bottom_sheet_layout);
     gestureLayout = findViewById(R.id.gesture_layout);
     sheetBehavior = BottomSheetBehavior.from(bottomSheetLayout);
-   // imageSegmenterOriginal = new ImageSegmenter(this);
     bottomSheetArrowImageView = findViewById(R.id.bottom_sheet_arrow);
 
-
-
-
-
-
-
+//Height Layout Management according to muni ko menu
     ViewTreeObserver vto = gestureLayout.getViewTreeObserver();
     vto.addOnGlobalLayoutListener(
         new ViewTreeObserver.OnGlobalLayoutListener() {
@@ -138,13 +117,14 @@ public abstract class CameraActivity extends AppCompatActivity
             } else {
               gestureLayout.getViewTreeObserver().removeOnGlobalLayoutListener(this);
             }
-            //                int width = bottomSheetLayout.getMeasuredWidth();
             int height = gestureLayout.getMeasuredHeight();
 
             sheetBehavior.setPeekHeight(height);
           }
         });
     sheetBehavior.setHideable(false);
+
+//    Manages muni ko menu
 
     sheetBehavior.setBottomSheetCallback(
         new BottomSheetBehavior.BottomSheetCallback() {
@@ -202,7 +182,9 @@ public abstract class CameraActivity extends AppCompatActivity
 
 
 
-  /** Callback for android.hardware.Camera API */
+//Purano camera ko laagi
+
+//  Prevents prcessing faster than the device can handle
   @Override
   public void onPreviewFrame(final byte[] bytes, final Camera camera) {
     if (isProcessingFrame) {
@@ -211,7 +193,7 @@ public abstract class CameraActivity extends AppCompatActivity
     }
 
     try {
-      // Initialize the storage bitmaps once when the resolution is known.
+//      Starts processing the camera preview frame
       if (rgbBytes == null) {
         Camera.Size previewSize = camera.getParameters().getPreviewSize();
         previewHeight = previewSize.height;
@@ -227,7 +209,7 @@ public abstract class CameraActivity extends AppCompatActivity
     isProcessingFrame = true;
     yuvBytes[0] = bytes;
     yRowStride = previewWidth;
-
+//Conversion of the YUV bytes to ARGB8888
     imageConverter =
         new Runnable() {
           @Override
@@ -235,7 +217,7 @@ public abstract class CameraActivity extends AppCompatActivity
             ImageUtils.convertYUV420SPToARGB8888(bytes, previewWidth, previewHeight, rgbBytes);
           }
         };
-
+//Indicate image procesing is complete and ready for next
     postInferenceCallback =
         new Runnable() {
           @Override
@@ -254,10 +236,12 @@ public abstract class CameraActivity extends AppCompatActivity
 
 
 
-  /** Callback for Camera2 API */
+// Naya Camera
+
+//  Read image values
   @Override
   public void onImageAvailable(final ImageReader reader) {
-    // We need wait until we have some size from onPreviewSizeChosen
+//    Validates and moves forward only if preview size is okay
     if (previewWidth == 0 || previewHeight == 0) {
       return;
     }
@@ -299,7 +283,7 @@ public abstract class CameraActivity extends AppCompatActivity
                   rgbBytes);
             }
           };
-
+//Naya ko laagi ready
       postInferenceCallback =
           new Runnable() {
             @Override
@@ -308,7 +292,7 @@ public abstract class CameraActivity extends AppCompatActivity
               isProcessingFrame = false;
             }
           };
-
+//Img process garni ani exception aayo bhane catch and log
       processImage();
     } catch (final Exception e) {
       LOGGER.e(e, "Exception!");
@@ -317,6 +301,7 @@ public abstract class CameraActivity extends AppCompatActivity
     }
     Trace.endSection();
   }
+//  Control processes in different situations
 
   @Override
   public synchronized void onStart() {
@@ -371,7 +356,7 @@ public abstract class CameraActivity extends AppCompatActivity
       handler.post(r);
     }
   }
-
+//Request permission
   @Override
   public void onRequestPermissionsResult(
       final int requestCode, final String[] permissions, final int[] grantResults) {
@@ -384,7 +369,7 @@ public abstract class CameraActivity extends AppCompatActivity
       }
     }
   }
-
+//Check if all permisions granted
   private static boolean allPermissionsGranted(final int[] grantResults) {
     for (int result : grantResults) {
       if (result != PackageManager.PERMISSION_GRANTED) {
@@ -393,7 +378,7 @@ public abstract class CameraActivity extends AppCompatActivity
     }
     return true;
   }
-
+//Camera permission grant check
   private boolean hasPermission() {
     if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
       return checkSelfPermission(PERMISSION_CAMERA) == PackageManager.PERMISSION_GRANTED;
@@ -401,7 +386,7 @@ public abstract class CameraActivity extends AppCompatActivity
       return true;
     }
   }
-
+//request permission
   private void requestPermission() {
     if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
       if (shouldShowRequestPermissionRationale(PERMISSION_CAMERA)) {
@@ -419,20 +404,20 @@ public abstract class CameraActivity extends AppCompatActivity
   private boolean isHardwareLevelSupported(
       CameraCharacteristics characteristics, int requiredLevel) {
     int deviceLevel = characteristics.get(CameraCharacteristics.INFO_SUPPORTED_HARDWARE_LEVEL);
+//    Legacy check
     if (deviceLevel == CameraCharacteristics.INFO_SUPPORTED_HARDWARE_LEVEL_LEGACY) {
       return requiredLevel == deviceLevel;
     }
-    // deviceLevel is not LEGACY, can use numerical sort
+//    nayacamera check
     return requiredLevel <= deviceLevel;
   }
-
+//Choose camera among available and skip front cameras
   private String chooseCamera() {
     final CameraManager manager = (CameraManager) getSystemService(Context.CAMERA_SERVICE);
     try {
       for (final String cameraId : manager.getCameraIdList()) {
         final CameraCharacteristics characteristics = manager.getCameraCharacteristics(cameraId);
 
-        // We don't use a front facing camera in this sample.
         final Integer facing = characteristics.get(CameraCharacteristics.LENS_FACING);
         if (facing != null && facing == CameraCharacteristics.LENS_FACING_FRONT) {
           continue;
@@ -445,9 +430,7 @@ public abstract class CameraActivity extends AppCompatActivity
           continue;
         }
 
-        // Fallback to camera1 API for internal cameras that don't have full support.
-        // This should help with legacy situations where using the camera2 API causes
-        // distorted or otherwise broken previews.
+//     Decides whether to use Camera2APi or thotro
         useCamera2API =
             (facing == CameraCharacteristics.LENS_FACING_EXTERNAL)
                 || isHardwareLevelSupported(
@@ -461,7 +444,7 @@ public abstract class CameraActivity extends AppCompatActivity
 
     return null;
   }
-
+//Chooses if to call cameraconnectionfragment or legacycameraconncetionfragment
   protected void setFragment() {
     String cameraId = chooseCamera();
 
@@ -492,8 +475,6 @@ public abstract class CameraActivity extends AppCompatActivity
   }
 
   protected void fillBytes(final Plane[] planes, final byte[][] yuvBytes) {
-    // Because of the variable row stride it's not possible to know in
-    // advance the actual necessary dimensions of the yuv planes.
     for (int i = 0; i < planes.length; ++i) {
       final ByteBuffer buffer = planes[i].getBuffer();
       if (yuvBytes[i] == null) {
@@ -538,7 +519,7 @@ public abstract class CameraActivity extends AppCompatActivity
     if (isChecked) apiSwitchCompat.setText("NNAPI");
     else apiSwitchCompat.setText("TFLITE");
   }
-
+//muni ko buttons haru ko state change handle
   @Override
   public void onClick(View v) {
     if (v.getId() == R.id.plus) {
@@ -572,10 +553,6 @@ public abstract class CameraActivity extends AppCompatActivity
   protected void showInference(String inferenceTime) {
     inferenceTimeTextView.setText(inferenceTime);
   }
-
- // public ImageSegmenter getImageSegmenterOriginal() {
- //   return imageSegmenterOriginal;
- // }
 
   protected void segmentation() throws Throwable {
     camera2Fragment.segmentFrame();

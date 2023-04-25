@@ -1,18 +1,3 @@
-/*
- * Copyright 2019 The TensorFlow Authors. All Rights Reserved.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *       http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- */
 
 package org.tensorflow.lite.examples.detection;
 
@@ -67,20 +52,14 @@ import org.tensorflow.lite.examples.detection.customview.AutoFitTextureView;
 import org.tensorflow.lite.examples.detection.env.Logger;
 import tflite.ImageSegmenter;
 
+//Image processing sab esmai huncha
 @SuppressLint("ValidFragment")
 public class CameraConnectionFragment extends Fragment {
   private static final Logger LOGGER = new Logger();
   private ImageView segmenterOverlay;
   private ImageSegmenter imageSegmenter;
-
-
-  /**
-   * The camera preview size will be chosen to be the smallest frame by pixel size capable of
-   * containing a DESIRED_SIZE x DESIRED_SIZE square.
-   */
   private static final int MINIMUM_PREVIEW_SIZE = 256;
 
-  /** Conversion from screen rotation to JPEG orientation. */
   private static final SparseIntArray ORIENTATIONS = new SparseIntArray();
 
   private static final String FRAGMENT_DIALOG = "dialog";
@@ -96,7 +75,7 @@ public class CameraConnectionFragment extends Fragment {
   private final Semaphore cameraOpenCloseLock = new Semaphore(1);
   /** A {@link OnImageAvailableListener} to receive frames as they are available. */
   private final OnImageAvailableListener imageListener;
-  /** The input size in pixels desired by TensorFlow (width and height of a square bitmap). */
+  /** The input size in pixels  */
   private final Size inputSize;
   /** The layout identifier to inflate for this Fragment. */
   private final int layout;
@@ -170,6 +149,7 @@ public class CameraConnectionFragment extends Fragment {
   /**
    * {@link TextureView.SurfaceTextureListener} handles several lifecycle events on a {@link
    * TextureView}.
+   * texture manage garcha preview ma data ko
    */
   private final TextureView.SurfaceTextureListener surfaceTextureListener =
       new TextureView.SurfaceTextureListener() {
@@ -193,7 +173,7 @@ public class CameraConnectionFragment extends Fragment {
         @Override
         public void onSurfaceTextureUpdated(final SurfaceTexture texture) {}
       };
-
+//Construcor
   private CameraConnectionFragment(
       final ConnectionCallback connectionCallback,
       final OnImageAvailableListener imageListener,
@@ -215,6 +195,7 @@ public class CameraConnectionFragment extends Fragment {
    * @param height The minimum desired height
    * @return The optimal {@code Size}, or an arbitrary one if none were big enough
    */
+//  Choose desired preview size from available ones
   protected static Size chooseOptimalSize(final Size[] choices, final int width, final int height) {
     final int minSize = Math.max(Math.min(width, height), MINIMUM_PREVIEW_SIZE);
     final Size desiredSize = new Size(width, height);
@@ -344,7 +325,7 @@ public class CameraConnectionFragment extends Fragment {
 
       sensorOrientation = characteristics.get(CameraCharacteristics.SENSOR_ORIENTATION);
 
-      // Danger, W.R.! Attempting to use too large a preview size could  exceed the camera
+      //  Attempting to use too large a preview size could  exceed the camera
       // bus' bandwidth limitation, resulting in gorgeous previews but the storage of
       // garbage capture data.
       previewSize =

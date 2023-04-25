@@ -1,18 +1,3 @@
-/*
- * Copyright 2019 The TensorFlow Authors. All Rights Reserved.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *       http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- */
 
 package org.tensorflow.lite.examples.detection;
 
@@ -47,14 +32,8 @@ import tflite.Classifier;
 import tflite.Detector;
 import tflite.TFLiteObjectDetectionAPIModel;
 
-/**
- * An activity that uses a TensorFlowMultiBoxDetector and ObjectTracker to detect and then track
- * objects.
- */
 public class DetectorActivity extends CameraActivity implements OnImageAvailableListener {
   private static final Logger LOGGER = new Logger();
-
-  // Configuration values for the prepackaged SSD model.
   private static final int TF_OD_API_INPUT_SIZE = 300;
   private static final boolean TF_OD_API_IS_QUANTIZED = true;
   private static final String TF_OD_API_MODEL_FILE = "detect.tflite";
@@ -103,7 +82,7 @@ public class DetectorActivity extends CameraActivity implements OnImageAvailable
 
 
   private BorderedText borderedText;
-  //takes photos and segments them periodically
+  //Calls Segmentation method and schedules threads to run in the background
   private Runnable periodicSegment = new Runnable() {
     @Override
     public void run() {
@@ -128,7 +107,7 @@ public class DetectorActivity extends CameraActivity implements OnImageAvailable
     tracker = new MultiBoxTracker(this);
 
     int cropSize = TF_OD_API_INPUT_SIZE;
-
+//model loading
     try {
       detector =
           TFLiteObjectDetectionAPIModel.create(
@@ -147,7 +126,7 @@ public class DetectorActivity extends CameraActivity implements OnImageAvailable
       toast.show();
       finish();
     }
-
+//gets the preview values and manages it
     previewWidth = size.getWidth();
     previewHeight = size.getHeight();
 
@@ -165,7 +144,7 @@ public class DetectorActivity extends CameraActivity implements OnImageAvailable
       return;
     }
 
-
+//Crops input according to required size for the model
     frameToCropTransform =
         ImageUtils.getTransformationMatrix(
             previewWidth, previewHeight,
@@ -174,7 +153,7 @@ public class DetectorActivity extends CameraActivity implements OnImageAvailable
 
     cropToFrameTransform = new Matrix();
     frameToCropTransform.invert(cropToFrameTransform);
-
+//Draw in top of the camera interface
     trackingOverlay = (OverlayView) findViewById(R.id.tracking_overlay);
     trackingOverlay.addCallback(
         new DrawCallback() {
@@ -190,14 +169,12 @@ public class DetectorActivity extends CameraActivity implements OnImageAvailable
     tracker.setFrameConfiguration(previewWidth, previewHeight, sensorOrientation);
     rgbFrameBitmap = Bitmap.createBitmap(previewWidth, previewHeight, Config.ARGB_8888);
   }
-
+//Image processing
   @Override
   protected void processImage() {
     ++timestamp;
     final long currTimestamp = timestamp;
     trackingOverlay.postInvalidate();
-
-    // No mutex needed as this method is not reentrant.
     if (computingDetection) {
       readyForNextImage();
       return;
@@ -215,7 +192,7 @@ public class DetectorActivity extends CameraActivity implements OnImageAvailable
 
     final Canvas canvas = new Canvas(croppedBitmap);
     canvas.drawBitmap(rgbFrameBitmap, frameToCropTransform, null);
-    // For examining the actual TF input.
+    // For examining the actual  input.
     if (SAVE_PREVIEW_BITMAP) {
       ImageUtils.saveBitmap(croppedBitmap);
     }
@@ -264,7 +241,6 @@ public class DetectorActivity extends CameraActivity implements OnImageAvailable
             computingDetection = false;
 
 
-            //Added for depth estimation
             if(classifier != null){
                img_array_depth = classifier.recognizeImage(rgbFrameBitmap, sensorOrientation);
                image_normalized =  normalize_image(img_array_depth, imageSizeX, imageSizeY);
@@ -295,8 +271,6 @@ public class DetectorActivity extends CameraActivity implements OnImageAvailable
     return DESIRED_PREVIEW_SIZE;
   }
 
-  // Which detection model to use: by default uses Tensorflow Object Detection API frozen
-  // checkpoints.
   private enum DetectorMode {
     TF_OD_API;
   }
